@@ -59,6 +59,12 @@
  */
 #define SAMPLE_RATE 200
 
+/*
+ * Use red button as back button instead of firmware scroll.
+ * Scrolling can be done with software wheel emulation
+ */
+#define RED_BUTTON_AS_BACK
+
 #define REVERT_Y_AXIS
 
 #ifdef REVERT_Y_AXIS
@@ -239,6 +245,7 @@ int isPs2pp4ThButtonDown = false;
 bool oldLeftButton = false;
 bool oldRightButton = false;
 bool oldMiddleButton = false;
+bool oldRedButton = false;
 
 // PS2++, extended ps/2 protocol spec.
 // http://web.archive.org/web/20030714000535/http://dqcs.com/logitech/ps2ppspec.htm
@@ -359,11 +366,21 @@ void loop()
     }
     oldMiddleButton = middleButton;
 
+#if defined(RED_BUTTON_AS_BACK) && defined(ADVANCE_MOUSE)
+    if (!oldRedButton && isPs2pp4ThButtonDown) {
+      MOUSE_PRESS(MOUSE_BACK);
+    } else if (oldRedButton && !isPs2pp4ThButtonDown) {
+      MOUSE_RELEASE(MOUSE_BACK);
+    }
+    oldRedButton = isPs2pp4ThButtonDown;
+#else
     if (isPs2pp4ThButtonDown) {
       // translate y scroll into wheel-scroll
       MOUSE_MOVE(0, 0, my);
     }
-    else {
+    else
+#endif
+    {
       MOUSE_MOVE(mx, Y_MULT * my, 0);
     }
   }
