@@ -25,7 +25,16 @@
  */
 #include "Mouse.h"
 
+/* Comment this line to use original remote mode. */
 #define STREAM_MODE
+
+/*
+ * Set sample rate.
+ * PS/2 default sample rate is 100Hz.
+ * Valid sample rates: 10, 20, 40, 60, 80, 100, 200
+ */
+#define SAMPLE_RATE 200
+
 #define REVERT_Y_AXIS
 
 #ifdef REVERT_Y_AXIS
@@ -178,6 +187,14 @@ void mouse_init()
   //  Serial.print("Read ack byte1\n");
   mouse_read();  /* blank */
   mouse_read();  /* blank */
+#ifdef SAMPLE_RATE
+  //  Serial.print("Setting sample rate: ");
+  //  Serial.println(SAMPLE_RATE);
+  mouse_write(0xf3);  /* sample rate */
+  mouse_read();  /* ack */
+  mouse_write(SAMPLE_RATE);
+  mouse_read();  /* ack */
+#endif
 #ifndef STREAM_MODE
   //  Serial.print("Sending remote mode code\n");
   mouse_write(0xf0);  /* remote mode */
@@ -332,4 +349,3 @@ void loop()
   delay(20);  /* twiddle */
 #endif
 }
-
