@@ -23,7 +23,31 @@
  * Also uses serial protocol to talk back to the host
  * and report what it finds.
  */
-#include "Mouse.h"
+
+/*
+ * Use AdvMouse library.
+ * Install library/AdvMouse to your Arduino library directory
+ */
+#define ADVANCE_MOUSE
+
+#ifdef ADVANCE_MOUSE
+  #include <AdvMouse.h>
+  #define MOUSE_BEGIN       AdvMouse.begin()
+  #define MOUSE_PRESS(x)    AdvMouse.press_(x)
+  #define MOUSE_RELEASE(x)  AdvMouse.release_(x)
+  #define MOUSE_MOVE(...)                                                     \
+    do {                                                                      \
+      if (AdvMouse.needSendReport() || mx != 0 || my != 0) {                  \
+        AdvMouse.move(__VA_ARGS__);                                           \
+      }                                                                       \
+    } while (0)
+#else
+  #include <Mouse.h>
+  #define MOUSE_BEGIN       Mouse.begin()
+  #define MOUSE_PRESS(x)    Mouse.press(x)
+  #define MOUSE_RELEASE(x)  Mouse.release(x)
+  #define MOUSE_MOVE(...)   Mouse.move(__VA_ARGS__)
+#endif
 
 /* Comment this line to use original remote mode. */
 #define STREAM_MODE
@@ -256,7 +280,7 @@ void setup()
 #ifdef STREAM_MODE
   mouse_enable_report();
 #endif
-  Mouse.begin();
+  MOUSE_BEGIN;
 }
 
 bool ps2pp_decode(char r0, char r1, char r2)
@@ -305,44 +329,43 @@ void loop()
 
   bool isPs2pp = ps2pp_decode(mstat, mx, my);
   if (!isPs2pp) {
-    if (isPs2pp4ThButtonDown) {
-      // translate y scroll into wheel-scroll
-      Mouse.move(0, 0, my);
-    }
-    else {
-      Mouse.move(mx, Y_MULT * my, 0);
-    }
-
     // handle left button
     bool leftButton = mstat & 0x01;
     if (!oldLeftButton && leftButton) {
-      Mouse.press(MOUSE_LEFT);
+      MOUSE_PRESS(MOUSE_LEFT);
     }
     else if (oldLeftButton && !leftButton) {
-      Mouse.release(MOUSE_LEFT);
+      MOUSE_RELEASE(MOUSE_LEFT);
     }
     oldLeftButton = leftButton;
 
     // handle right button
     bool rightButton = mstat & 0x02;
     if (!oldRightButton && rightButton) {
-      Mouse.press(MOUSE_RIGHT);
+      MOUSE_PRESS(MOUSE_RIGHT);
     }
     else if (oldRightButton && !rightButton) {
-      Mouse.release(MOUSE_RIGHT);
+      MOUSE_RELEASE(MOUSE_RIGHT);
     }
     oldRightButton = rightButton;
 
     // handle middle button
     bool middleButton = mstat & 0x04;
     if (!oldMiddleButton && middleButton) {
-      Mouse.press(MOUSE_MIDDLE);
+      MOUSE_PRESS(MOUSE_MIDDLE);
     }
     else if (oldMiddleButton && !middleButton) {
-      Mouse.release(MOUSE_MIDDLE);
+      MOUSE_RELEASE(MOUSE_MIDDLE);
     }
     oldMiddleButton = middleButton;
 
+    if (isPs2pp4ThButtonDown) {
+      // translate y scroll into wheel-scroll
+      MOUSE_MOVE(0, 0, my);
+    }
+    else {
+      MOUSE_MOVE(mx, Y_MULT * my, 0);
+    }
   }
 
 #ifndef STREAM_MODE
