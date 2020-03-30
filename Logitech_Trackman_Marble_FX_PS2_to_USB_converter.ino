@@ -25,6 +25,7 @@
  */
 #include "Mouse.h"
 
+#define STREAM_MODE
 #define REVERT_Y_AXIS
 
 #ifdef REVERT_Y_AXIS
@@ -177,10 +178,19 @@ void mouse_init()
   //  Serial.print("Read ack byte1\n");
   mouse_read();  /* blank */
   mouse_read();  /* blank */
+#ifndef STREAM_MODE
   //  Serial.print("Sending remote mode code\n");
   mouse_write(0xf0);  /* remote mode */
   mouse_read();  /* ack */
   //  Serial.print("Read ack byte2\n");
+  delayMicroseconds(100);
+#endif
+}
+
+void mouse_enable_report()
+{
+  mouse_write(0xf4); /* enable report */
+  mouse_read(); /* ack */
   delayMicroseconds(100);
 }
 
@@ -226,6 +236,9 @@ void setup()
   Serial.begin(9600);
   mouse_init();
   ps2pp_write_magic_ping();
+#ifdef STREAM_MODE
+  mouse_enable_report();
+#endif
   Mouse.begin();
 }
 
@@ -265,8 +278,10 @@ void loop()
   char mx;
   char my;
 
+#ifndef STREAM_MODE
   mouse_write(0xeb);  /* give me data! */
   mouse_read();      /* ignore ack */
+#endif
   mstat = mouse_read();
   mx = mouse_read();
   my = mouse_read();
@@ -313,6 +328,8 @@ void loop()
 
   }
 
+#ifndef STREAM_MODE
   delay(20);  /* twiddle */
+#endif
 }
 
