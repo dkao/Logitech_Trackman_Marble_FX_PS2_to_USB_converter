@@ -242,10 +242,12 @@ void mouse_enable_report()
 }
 
 int isPs2pp4ThButtonDown = false;
+int isPs2pp5ThButtonDown = false;
 bool oldLeftButton = false;
 bool oldRightButton = false;
 bool oldMiddleButton = false;
-bool oldRedButton = false;
+bool old4thButton = false;
+bool old5thButton = false;
 
 // PS2++, extended ps/2 protocol spec.
 // http://web.archive.org/web/20030714000535/http://dqcs.com/logitech/ps2ppspec.htm
@@ -306,12 +308,8 @@ bool ps2pp_decode(char r0, char r1, char r2)
   // }
   // mouse extra info
   if (t == 1) {
-    if (data & 0x10) {
-      isPs2pp4ThButtonDown = HIGH;
-    }
-    else {
-      isPs2pp4ThButtonDown = LOW;
-    }
+    isPs2pp4ThButtonDown = !!(data & 0x10);
+    isPs2pp5ThButtonDown = !!(data & 0x20);
   }
   return true;
 }
@@ -367,12 +365,19 @@ void loop()
     oldMiddleButton = middleButton;
 
 #if defined(RED_BUTTON_AS_BACK) && defined(ADVANCE_MOUSE)
-    if (!oldRedButton && isPs2pp4ThButtonDown) {
+    if (!old4thButton && isPs2pp4ThButtonDown) {
       MOUSE_PRESS(MOUSE_BACK);
-    } else if (oldRedButton && !isPs2pp4ThButtonDown) {
+    } else if (old4thButton && !isPs2pp4ThButtonDown) {
       MOUSE_RELEASE(MOUSE_BACK);
     }
-    oldRedButton = isPs2pp4ThButtonDown;
+    old4thButton = isPs2pp4ThButtonDown;
+
+    if (!old5thButton && isPs2pp5ThButtonDown) {
+      MOUSE_PRESS(MOUSE_FORWARD);
+    } else if (old5thButton && !isPs2pp5ThButtonDown) {
+      MOUSE_RELEASE(MOUSE_FORWARD);
+    }
+    old5thButton = isPs2pp5ThButtonDown;
 #else
     if (isPs2pp4ThButtonDown) {
       // translate y scroll into wheel-scroll
