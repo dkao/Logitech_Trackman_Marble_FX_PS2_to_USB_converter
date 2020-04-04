@@ -295,7 +295,7 @@ bool ps2pp_decode(char r0, char r1, char r2)
   if ((r0 & 0x48) != 0x48) {
     return false;
   }
-  int t = ((r0 & 0x30) << 4) || (r1 & 0x30);
+  int t = ((((r0 & 0x30) << 2) | (r1 & 0x30)) >> 4) & 0xF;
   int check = r1 & 0x0f;
   int data = r2;
   // if ((check & 0x03 == 2) && (check >> 2) == (data & 0x03)) {
